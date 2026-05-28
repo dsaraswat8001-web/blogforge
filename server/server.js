@@ -5,11 +5,32 @@ const cors = require('cors');
 
 const app = express();
 
-// Middleware
+// Middleware - Dynamic CORS Configuration
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://blogforge-kappa.vercel.app',
+  /https:\/\/blogforge-.*\.vercel\.app$/ // 🚀 Automatically trusts ALL your Vercel preview/branch domains!
+];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, Insomnia, or Postman)
+    if (!origin) return callback(null, true);
+    
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) return allowed.test(origin);
+      return allowed === origin;
+    });
+
+    if (isAllowed) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('Blocked by CORS policy'));
+    }
+  },
   credentials: true
 }));
+
 app.use(express.json({ limit: '10mb' }));
 
 // Routes
